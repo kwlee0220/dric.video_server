@@ -1,0 +1,158 @@
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+buildscript {
+	repositories {
+		mavenLocal()
+		jcenter()
+	}
+	dependencies {
+		classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+	}
+}
+
+group = 'etri'
+version = '20.05.15'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+[compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
+
+buildscript {
+	repositories {
+		mavenLocal()
+		jcenter()
+	}
+	dependencies {
+		classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+	}
+}
+
+repositories {
+    mavenLocal()
+	maven {
+		url "http://www.datanucleus.org/downloads/maven2/"
+	}
+	maven {
+		url "http://download.osgeo.org/webdav/geotools/"
+	}
+    mavenCentral()
+	maven {
+		url "http://repo.boundlessgeo.com/main/"
+	}
+}
+
+ext.opencv_version = '430'
+ext.grpc_version = '1.16.1'
+ext.protobuf_version = '3.5.1'
+ext.snakeyaml_version = '1.26'
+ext.postgresql_version = '42.0.0'
+ext.postgis_jdbc_version = '2.1.0'
+
+dependencies {
+	compile project(":utils")
+	compile project(":dric.client")
+	
+	// PostSQL
+	compile "org.postgresql:postgresql:${postgresql_version}"
+	compile "org.postgis:postgis-jdbc:${postgis_jdbc_version}"
+	
+	// OpenCV
+	compile fileTree(dir: 'lib', include: "opencv-${opencv_version}.jar")
+	
+	// grpc
+	api "com.google.protobuf:protobuf-java:${protobuf_version}"
+	api "com.google.protobuf:protobuf-java-util:${protobuf_version}"
+	api "io.grpc:grpc-stub:${grpc_version}"
+	api "io.grpc:grpc-netty-shaded:${grpc_version}"
+	implementation "io.grpc:grpc-protobuf:${grpc_version}"
+	
+	// yaml
+	implementation group: 'org.yaml', name: 'snakeyaml', version: "${snakeyaml_version}"
+	
+}
+
+task sourceJar(type: Jar) {
+	classifier 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+	classifier 'javadoc'
+	from javadoc.destinationDir
+}
+
+shadowJar {
+	classifier 'all'
+	
+	mergeServiceFiles()
+	
+	exclude 'META-INF/*.SF'
+	exclude 'META-INF/*.DSA'
+	exclude 'META-INF/*.RSA'
+}
+
+artifacts {
+	archives sourceJar
+	archives javadocJar
+	archives shadowJar
+}
+
+publishing {
+	publications {
+		commonGrpc(MavenPublication) {
+			from components.java
+			
+			artifact sourceJar
+			artifact javadocJar
+			artifact shadowJar
+		}
+	}
+}
+
+ext.distDir = "${System.properties['user.home']}/Temp/dric/${archivesBaseName}.dist"
+task distributeBinary(type:Copy) {
+	println("${distDir}")
+	dependsOn assemble
+	into "${distDir}"
+	from ("${projectDir}") {
+		include 'bin/**'
+		include 'lib/**'
+		include '*.properties'
+		include '*.yaml'
+		include '.gitignore'
+	}
+}
+
+apply plugin: 'eclipse'
+eclipse {
+	classpath {
+		file {
+			withXml {
+				def node = it.asNode()
+				node.appendNode('classpathentry', [kind: 'output', path: 'classes'])
+			}
+			
+			whenMerged { cp ->
+				Map entryByPath = cp.entries.groupBy { entry -> entry.path }
+				entryByPath.each { key, values ->
+					if ( values.size() > 1 ) {
+            			def entry = values.first()
+            			if ( entry.kind == 'src' ) {
+            				entry.includes = []
+            				entry.excludes = []
+            			}
+            			int index = cp.entries.indexOf entry
+            			cp.entries.removeAll values
+            			cp.entries.add index, entry
+					}
+				}
+				cp.entries.each { entry ->
+					if ( entry.kind == 'src' && entry.hasProperty('output') ) {
+						entry.output = 'classes'
+					}
+				}
+			}
+		}
+	}
+}

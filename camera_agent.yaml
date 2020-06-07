@@ -1,0 +1,22 @@
+dric_platform:
+    host: localhost
+    port: 10703
+    
+video_store:
+    folder: C:/Temp/videos
+    fps: 10.0
+#    fourcc: XVID
+    fourcc: DIVX
+    tail_interval: 30s
+    
+jdbc:
+    system: postgresql
+    host: 129.254.82.42
+    port: 5432
+    db_name: kwlee
+    user: kwlee
+    password: urc2004
+    
+opencv_dlls:
+    - C:/development/dric/dric.video/lib/opencv_java430.dll
+    - C:/development/dric/dric.video/lib/opencv_videoio_ffmpeg430_64.dll

@@ -1,0 +1,11 @@
+rootProject.name = 'dric.video_server'
+
+['utils'].each {
+	include ":$it"
+	project(":$it").projectDir = file("../../common/$it")
+}
+
+['dric.client'].each {
+	include ":$it"
+	project(":$it").projectDir = file("../$it")
+}
