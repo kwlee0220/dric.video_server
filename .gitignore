@@ -27,6 +27,6 @@ hs_err_pid*
 .classpath
 /.settings/
 /build/
-/cam_1-*/
+/**/*-tcp-*/**
 /bin/*.yaml
 /bin/*.jar
