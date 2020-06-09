@@ -112,16 +112,9 @@ publishing {
 
 ext.distDir = "${System.properties['user.home']}/Temp/dric/${archivesBaseName}.dist"
 task distributeBinary(type:Copy) {
-	println("${distDir}")
 	dependsOn assemble
 	into "${distDir}"
-	from ("${projectDir}") {
-		include 'bin/**'
-		include 'lib/**'
-		include '*.properties'
-		include '*.yaml'
-		include '.gitignore'
-	}
+	from ("${projectDir}/bin")
 }
 
 apply plugin: 'eclipse'

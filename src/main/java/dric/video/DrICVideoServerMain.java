@@ -26,6 +26,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import utils.NetUtils;
 import utils.UsageHelp;
+import utils.Utilities;
 import utils.func.FOption;
 import utils.jdbc.JdbcProcessor;
 
@@ -39,19 +40,27 @@ import utils.jdbc.JdbcProcessor;
 		description="DrIC VideoServer command")
 public class DrICVideoServerMain implements Runnable {
 	private static final Logger s_logger = LoggerFactory.getLogger(DrICVideoServerMain.class);
+	private static final String DEFAULT_CONFIG_FNAME = "video_server.yaml";
 	
 	@Spec private CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 	
+	private File m_homeDir;
+	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
+	public void setHome(String path) throws IOException {
+		m_homeDir = new File(path).getCanonicalFile();
+	}
+	
 	@Option(names={"--config"}, paramLabel="path", description={"VideoServer configration file"})
-	private File m_configFile = new File("video_server.yaml");
+	private File m_configFile;
 	
 	@Option(names={"-f", "--format"}, description={"format DrICVideoServer database"})
 	private boolean m_format = false;
 	
+	@Option(names={"-v"}, description={"verbose"})
+	private boolean m_verbose = false;
+	
 	public static final void main(String... args) throws Exception {
-		configureLog4j();
-
 		DrICVideoServerMain cmd = new DrICVideoServerMain();
 		CommandLine.run(cmd, System.out, System.err, Help.Ansi.OFF, args);
 	}
@@ -60,13 +69,21 @@ public class DrICVideoServerMain implements Runnable {
 	public void run() {
 		try {
 			configureLog4j();
-			
-			VideoServerConfig config = VideoServerConfig.from(m_configFile);
+
+			File configFile = getConfigFile();
+			if ( m_verbose ) {
+				System.out.println("use configuration file: " + configFile);
+			}
+			VideoServerConfig config = VideoServerConfig.from(configFile);
 			DrICVideoServerImpl videoServer = new DrICVideoServerImpl(config);
 			
 			if ( m_format ) {
 				JdbcProcessor jdbc = ConfigUtils.getJdbcProcessor(config.getJdbcEndPoint());
 				try ( Connection conn = jdbc.connect() ) {
+					if ( m_verbose ) {
+						System.out.println("format database");
+					}
+					
 					DrICVideoServerImpl.format(conn);
 				}
 			}
@@ -92,14 +109,20 @@ public class DrICVideoServerMain implements Runnable {
 		}
 	}
 	
-	public static File getLog4jPropertiesFile() {
-		String homeDir = FOption.ofNullable(System.getenv("DRIC_HOME"))
-								.getOrElse(() -> System.getProperty("user.dir"));
-		return new File(homeDir, "log4j.properties");
+	private File getConfigFile() {
+		if ( m_configFile == null ) {
+			return new File(getHomeDir(), DEFAULT_CONFIG_FNAME);
+		}
+		else {
+			return m_configFile;
+		}
 	}
 	
-	public static File configureLog4j() throws IOException {
-		File propsFile = getLog4jPropertiesFile();
+	private File configureLog4j() throws IOException {
+		File propsFile = new File(getHomeDir(), "log4j.properties");
+		if ( m_verbose ) {
+			System.out.println("use log4.properties=" + propsFile);
+		}
 		
 		Properties props = new Properties();
 		try ( InputStream is = new FileInputStream(propsFile) ) {
@@ -127,6 +150,15 @@ public class DrICVideoServerMain implements Runnable {
 		}
 		else {
 			OpenCvInitializer.initialize();
+		}
+	}
+	
+	private File getHomeDir() {
+		if ( m_homeDir == null ) {
+			return Utilities.getCurrentWorkingDir();
+		}
+		else {
+			return m_homeDir;
 		}
 	}
 }

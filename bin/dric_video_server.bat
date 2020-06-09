@@ -1,5 +1,3 @@
 @echo off
 
-java -cp dric.video_server.jar ^
-dric.video.DrICVideoServerMain ^
-%*
+java -cp dric.video_server.jar dric.video.DrICVideoServerMain %*

@@ -43,11 +43,17 @@ public class DrICCameraAgentMain implements Runnable {
 	@Parameters(paramLabel="camera-id", index="0", description={"camera id"})
 	private String m_cameraId;
 	
-	@Option(names={"--home"}, paramLabel="path", description={"CameraAgent home directory"})
 	private File m_homeDir;
+	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
+	public void setHome(String path) throws IOException {
+		m_homeDir = new File(path).getCanonicalFile();
+	}
 	
 	@Option(names={"--config"}, paramLabel="path", description={"CameraAgent configuration file"})
 	private File m_configFile;
+	
+	@Option(names={"-n", "--no-video"}, description={"do not create video files"})
+	private boolean m_noVideo = false;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	private boolean m_verbose = false;
@@ -83,8 +89,14 @@ public class DrICCameraAgentMain implements Runnable {
 	    		}
 	    	});
 	    	
+	    	CameraInfo camInfo = null;
 			PBDrICVideoServerProxy vserver = m_client.getVideoServer();
-			CameraInfo camInfo = vserver.getCamera(m_cameraId);
+			try {
+				camInfo = vserver.getCamera(m_cameraId);
+			}
+			finally {
+				vserver.shutdown();
+			}
 			if ( m_verbose ) {
 				float fps = config.getVideoConfig().getFps();
 				System.out.printf("camera=%s, url=%s, fps=%.1f, fourcc=%s, dir=%s%n", camInfo.getId(), camInfo.getRtspUrl(),
@@ -93,7 +105,7 @@ public class DrICCameraAgentMain implements Runnable {
 			
 			TopicClient topicClient = m_client.getTopicClient(camInfo.getId());
 			Topic<CameraFrame> topic = topicClient.getCameraFrameTopic();
-			DrICCameraAgent agent = new DrICCameraAgent(camInfo, topic, config);
+			DrICCameraAgent agent = new DrICCameraAgent(camInfo, topic, m_noVideo, config);
 			agent.run();
 		}
 		catch ( Throwable e ) {

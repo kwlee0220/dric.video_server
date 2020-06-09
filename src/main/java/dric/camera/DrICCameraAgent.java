@@ -31,14 +31,16 @@ public class DrICCameraAgent implements CheckedRunnable {
 	private final CameraInfo m_info;
 	private final Topic<CameraFrame> m_topic;
 	private final CameraAgentConfig m_config;
+	private final boolean m_noVideo;
 	private final JdbcProcessor m_jdbc;
 	
 	private volatile Size m_resol;
 	private volatile VideoCapture m_camera;
 	
-	public DrICCameraAgent(CameraInfo info, Topic<CameraFrame> topic, CameraAgentConfig config) {
+	public DrICCameraAgent(CameraInfo info, Topic<CameraFrame> topic, boolean noVideo, CameraAgentConfig config) {
 		m_info = info;
 		m_topic = topic;
+		m_noVideo = noVideo;
 		m_config = config;
 		m_jdbc = ConfigUtils.getJdbcProcessor(config.getJdbcEndPoint());
 	}
@@ -85,7 +87,7 @@ public class DrICCameraAgent implements CheckedRunnable {
 		}
 		
 		try ( OpenCvFrameSampler samples = new OpenCvFrameSampler(m_camera, sampleInterval);
-				SampleFrameProcessor proc = new SampleFrameProcessor(this); ) {
+				SampleFrameProcessor proc = new SampleFrameProcessor(this, m_noVideo); ) {
 			samples.forEachOrThrow(proc);
 		}
 	}

@@ -1,5 +1,3 @@
 @echo off
 
-java -cp dric.video_server.jar ^
-dric.camera.DrICCameraAgentMain ^
-%*
+java -cp dric.video_server.jar dric.camera.DrICCameraAgentMain %*

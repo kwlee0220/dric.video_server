@@ -27,6 +27,7 @@ class SampleFrameProcessor implements CheckedConsumerX<Tuple<Mat,Long>, SQLExcep
 	private static final Logger s_logger = LoggerFactory.getLogger(SampleFrameProcessor.class);
 	
 	private final DrICCameraAgent m_agent;
+	private final boolean m_noVideo;
 	private final Topic<CameraFrame> m_topic;
 	private final long m_videoInterval;
 	private long m_startTs = -1;
@@ -38,8 +39,9 @@ class SampleFrameProcessor implements CheckedConsumerX<Tuple<Mat,Long>, SQLExcep
 	private VideoWriter m_writer;
 	private int m_appendCount = 0;
 	
-	SampleFrameProcessor(DrICCameraAgent agent) throws SQLException {
+	SampleFrameProcessor(DrICCameraAgent agent, boolean noVideo) throws SQLException {
 		m_agent = agent;
+		m_noVideo = noVideo;
 		m_topic = agent.getCameraFrameTopic();
 		m_videoInterval = agent.getVideoTailInterval();
 //		m_appender = new FrameAppendSession(m_agent.getJdbcProcessor());
@@ -65,21 +67,26 @@ class SampleFrameProcessor implements CheckedConsumerX<Tuple<Mat,Long>, SQLExcep
 		long ts = sample._2;
 		if ( m_startTs < 0 ) {
 			m_startTs = ts;
-			createVideoWriter(ts);
+			
+			if ( !m_noVideo ) {
+				createVideoWriter(ts);
+			}
 		}
 		
 		long elapsed = ts - m_startTs;
-		if ( elapsed > m_videoInterval ) {
-			m_writer.release();
-			insertVideo(m_videoFile, m_startTs, m_lastTs);
-			if ( s_logger.isInfoEnabled() ) {
-				double fps = m_appendCount / ((m_lastTs - m_startTs + 1) / 1000.0);
-				s_logger.info(String.format("actual fps=%.1f", fps));
+		if ( !m_noVideo ) {
+			if ( elapsed > m_videoInterval ) {
+				m_writer.release();
+				insertVideo(m_videoFile, m_startTs, m_lastTs);
+				if ( s_logger.isInfoEnabled() ) {
+					double fps = m_appendCount / ((m_lastTs - m_startTs + 1) / 1000.0);
+					s_logger.info(String.format("actual fps=%.1f", fps));
+				}
+				
+				createVideoWriter(ts);
 			}
-			
-			createVideoWriter(ts);
+			m_writer.write(sample._1);
 		}
-		m_writer.write(sample._1);
 		
 		Imgcodecs.imencode(".jpg", sample._1, m_mob);
 		byte[] jpegBytes = m_mob.toArray();
