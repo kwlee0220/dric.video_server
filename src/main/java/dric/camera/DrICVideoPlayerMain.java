@@ -11,11 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dric.DrICClient;
-import dric.proto.CameraInfo;
 import dric.topic.Topic;
 import dric.topic.TopicClient;
 import dric.type.CameraFrame;
-import dric.video.PBDrICVideoServerProxy;
 import opencvj.OpenCvInitializer;
 import picocli.CommandLine;
 import picocli.CommandLine.Help;
@@ -27,13 +25,14 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 import utils.UsageHelp;
 import utils.Utilities;
+import utils.io.IOUtils;
 
 /**
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class DrICCameraAgentMain implements Runnable {
-	private static final Logger s_logger = LoggerFactory.getLogger(DrICCameraAgentMain.class);
+public class DrICVideoPlayerMain implements Runnable {
+	private static final Logger s_logger = LoggerFactory.getLogger(DrICVideoPlayerMain.class);
 	private static final String DEF_CONFIG_FILE = "camera_agent.yaml";
 	
 	@Spec private CommandSpec m_spec;
@@ -41,6 +40,9 @@ public class DrICCameraAgentMain implements Runnable {
 	
 	@Parameters(paramLabel="camera-id", index="0", description={"camera id"})
 	private String m_cameraId;
+	
+	@Parameters(paramLabel="video-file", index="1", description={"video file path"})
+	private String m_videoFile;
 	
 	private File m_homeDir;
 	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
@@ -51,8 +53,8 @@ public class DrICCameraAgentMain implements Runnable {
 	@Option(names={"--config"}, paramLabel="path", description={"CameraAgent configuration file"})
 	private File m_configFile;
 	
-	@Option(names={"-n", "--no-video"}, description={"do not create video files"})
-	private boolean m_noVideo = false;
+	@Option(names={"--fps"}, paramLabel="fps", description={"frames per second"})
+	private float m_fps = 0f;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	private boolean m_verbose = false;
@@ -60,7 +62,7 @@ public class DrICCameraAgentMain implements Runnable {
 	private TopicClient m_client = null;
 	
 	public static final void main(String... args) throws Exception {
-		DrICCameraAgentMain cmd = new DrICCameraAgentMain();
+		DrICVideoPlayerMain cmd = new DrICVideoPlayerMain();
 		CommandLine.run(cmd, System.out, System.err, Help.Ansi.OFF, args);
 	}
 	
@@ -82,22 +84,13 @@ public class DrICCameraAgentMain implements Runnable {
 			}
 			
 			DrICClient client = DrICClient.connect(config.getPlatformEndPoint());
-	    	
-	    	CameraInfo camInfo = null;
-			PBDrICVideoServerProxy vserver = client.getVideoServer();
-			try {
-				camInfo = vserver.getCamera(m_cameraId);
-			}
-			finally {
-				vserver.shutdown();
-			}
-			if ( m_verbose ) {
-				float fps = config.getVideoConfig().getFps();
-				System.out.printf("camera=%s, url=%s, fps=%.1f, fourcc=%s, dir=%s%n", camInfo.getId(), camInfo.getRtspUrl(),
-									fps, config.getVideoConfig().getFourccString(), config.getVideoConfig().getVideoDir());
-			}
+	    	Runtime.getRuntime().addShutdownHook(new Thread() {
+	    		public void run() {
+	    			IOUtils.closeQuietly(client);
+	    		}
+	    	});
 			
-			m_client = client.getTopicClient(camInfo.getId());
+			m_client = client.getTopicClient(m_cameraId);
 			Topic<CameraFrame> topic = m_client.getCameraFrameTopic();
 	    	Runtime.getRuntime().addShutdownHook(new Thread() {
 	    		public void run() {
@@ -113,8 +106,7 @@ public class DrICCameraAgentMain implements Runnable {
 	    			}
 	    		}
 	    	});
-	    	
-			DrICCameraAgent agent = new DrICCameraAgent(camInfo, topic, m_noVideo, config);
+			DrICVideoPlayer agent = new DrICVideoPlayer(m_cameraId, m_videoFile, m_fps, topic);
 			agent.run();
 		}
 		catch ( Throwable e ) {
@@ -122,16 +114,7 @@ public class DrICCameraAgentMain implements Runnable {
 			m_spec.commandLine().usage(System.out, Ansi.OFF);
 		}
 		finally {
-			if ( m_client != null ) {
-				if ( s_logger.isInfoEnabled() ) {
-					s_logger.info("disconnect from MQTT-Server");
-				}
-				
-				if ( m_client != null ) {
-					m_client.disconnect();
-    				m_client = null;
-				}
-			}
+			IOUtils.closeQuietly(m_client);
 		}
 	}
 	
