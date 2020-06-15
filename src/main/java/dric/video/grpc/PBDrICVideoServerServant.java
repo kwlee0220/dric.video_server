@@ -14,6 +14,9 @@ import dric.video.CameraNotFoundException;
 import dric.video.DrICVideoServerImpl;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import proto.ErrorValue;
+import proto.ErrorValue.Code;
+import proto.VoidResponse;
 import utils.grpc.PBUtils;
 
 /**
@@ -65,20 +68,18 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 	}
 	
 	@Override
-    public void addCamera(CameraInfo info, StreamObserver<Empty> out) {
+    public void addCamera(CameraInfo info, StreamObserver<VoidResponse> out) {
 		try {
 			m_server.addCamera(info);
-			out.onNext(PBUtils.VOID);
+			out.onNext(PBUtils.VOID_RESPONSE);
 		}
 		catch ( CameraExistsException e ) {
-			out.onError(Status.ALREADY_EXISTS
-							.withDescription("CameraInfo exists: id=" + info.getId())
-							.asException());
+			ErrorValue error = PBUtils.ERROR(Code.ALREADY_EXISTS, "CameraInfo exists: id=" + info.getId());
+			out.onNext(PBUtils.ERROR_RESPONSE(error));
 		}
 		catch ( Exception e ) {
-			out.onError(Status.INTERNAL
-							.withDescription("cause=" + e)
-							.asException());
+			ErrorValue error = PBUtils.ERROR(e);
+			out.onNext(PBUtils.ERROR_RESPONSE(error));
 		}
 		finally {
 			out.onCompleted();
@@ -86,15 +87,14 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 	}
 
 	@Override
-    public void removeCamera(StringValue id, StreamObserver<Empty> out) {
+    public void removeCamera(StringValue id, StreamObserver<VoidResponse> out) {
 		try {
 			m_server.removeCamera(id.getValue());
-			out.onNext(PBUtils.VOID);
+			out.onNext(PBUtils.VOID_RESPONSE);
 		}
 		catch ( Exception e ) {
-			out.onError(Status.INTERNAL
-							.withDescription("cause=" + e)
-							.asException());
+			ErrorValue error = PBUtils.ERROR(e);
+			out.onNext(PBUtils.ERROR_RESPONSE(error));
 		}
 		finally {
 			out.onCompleted();
