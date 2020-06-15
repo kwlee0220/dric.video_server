@@ -3,7 +3,6 @@ package dric.video.grpc;
 import com.google.protobuf.Empty;
 import com.google.protobuf.StringValue;
 
-import dric.grpc.PBUtils;
 import dric.proto.CameraFrameRangeRequest;
 import dric.proto.CameraFrameRequest;
 import dric.proto.CameraFrameResponse;
@@ -15,6 +14,7 @@ import dric.video.CameraNotFoundException;
 import dric.video.DrICVideoServerImpl;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import utils.grpc.PBUtils;
 
 /**
  * 
@@ -137,7 +137,7 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
     
     private CameraFrameResponse toResponse(Exception e) {
     	return CameraFrameResponse.newBuilder()
-								.setError(PBUtils.toErrorProto(e))
+								.setError(PBUtils.ERROR(e))
 								.build();
     }
 }

@@ -51,6 +51,7 @@ ext.postgis_jdbc_version = '2.1.0'
 
 dependencies {
 	compile project(":utils")
+	compile project(":utils.grpc")
 	compile project(":dric.client")
 	
 	// PostSQL

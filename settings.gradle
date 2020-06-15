@@ -1,8 +1,9 @@
 rootProject.name = 'dric.video_server'
 
-['utils'].each {
+ext.common_dir = '../../common'
+['utils', 'utils.grpc'].each {
 	include ":$it"
-	project(":$it").projectDir = file("../../common/$it")
+	project(":$it").projectDir = file("${common_dir}/$it")
 }
 
 ['dric.client'].each {
