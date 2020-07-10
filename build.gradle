@@ -46,17 +46,11 @@ ext.opencv_version = '430'
 ext.grpc_version = '1.16.1'
 ext.protobuf_version = '3.5.1'
 ext.snakeyaml_version = '1.26'
-ext.postgresql_version = '42.0.0'
-ext.postgis_jdbc_version = '2.1.0'
 
 dependencies {
 	compile project(":utils")
 	compile project(":utils.grpc")
 	compile project(":dric.client")
-	
-	// PostSQL
-	compile "org.postgresql:postgresql:${postgresql_version}"
-	compile "org.postgis:postgis-jdbc:${postgis_jdbc_version}"
 	
 	// OpenCV
 	compile fileTree(dir: 'lib', include: "opencv-${opencv_version}.jar")
