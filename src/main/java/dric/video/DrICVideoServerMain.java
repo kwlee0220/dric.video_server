@@ -27,7 +27,6 @@ import picocli.CommandLine.Spec;
 import utils.NetUtils;
 import utils.UsageHelp;
 import utils.Utilities;
-import utils.func.FOption;
 import utils.jdbc.JdbcProcessor;
 
 /**
@@ -40,6 +39,7 @@ import utils.jdbc.JdbcProcessor;
 		description="DrIC VideoServer command")
 public class DrICVideoServerMain implements Runnable {
 	private static final Logger s_logger = LoggerFactory.getLogger(DrICVideoServerMain.class);
+	private static final String ENV_VAR_HOME = "DRIC_VIDEO_HOME";
 	private static final String DEFAULT_CONFIG_FNAME = "video_server.yaml";
 	
 	@Spec private CommandSpec m_spec;
@@ -118,24 +118,6 @@ public class DrICVideoServerMain implements Runnable {
 		}
 	}
 	
-	private File configureLog4j() throws IOException {
-		File propsFile = new File(getHomeDir(), "log4j.properties");
-		if ( m_verbose ) {
-			System.out.println("use log4.properties=" + propsFile);
-		}
-		
-		Properties props = new Properties();
-		try ( InputStream is = new FileInputStream(propsFile) ) {
-			props.load(is);
-		}
-		PropertyConfigurator.configure(props);
-		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("use log4j.properties from {}", propsFile);
-		}
-		
-		return propsFile;
-	}
-	
 	private Server createServer(DrICVideoServerImpl server, int port) {
 		PBDrICVideoServerServant servant = new PBDrICVideoServerServant(server);
 		Server nettyServer = NettyServerBuilder.forPort(port)
@@ -153,12 +135,35 @@ public class DrICVideoServerMain implements Runnable {
 		}
 	}
 	
-	private File getHomeDir() {
-		if ( m_homeDir == null ) {
-			return Utilities.getCurrentWorkingDir();
+	public File getHomeDir() {
+		File homeDir = m_homeDir;
+		if ( homeDir == null ) {
+			String homeDirPath = System.getenv(ENV_VAR_HOME);
+			if ( homeDirPath == null ) {
+				return Utilities.getCurrentWorkingDir();
+			}
+			else {
+				return new File(homeDirPath);
+			}
 		}
 		else {
 			return m_homeDir;
+		}
+	}
+
+	public void configureLog4j() throws IOException {
+		File propsFile = new File(getHomeDir(), "log4j.properties");
+		if ( m_verbose ) {
+			System.out.printf("use log4j.properties: file=%s%n", propsFile);
+		}
+		
+		Properties props = new Properties();
+		try ( InputStream is = new FileInputStream(propsFile) ) {
+			props.load(is);
+		}
+		PropertyConfigurator.configure(props);
+		if ( s_logger.isDebugEnabled() ) {
+			s_logger.debug("use log4j.properties from {}", propsFile);
 		}
 	}
 }

@@ -33,6 +33,7 @@ import utils.io.IOUtils;
  */
 public class DrICVideoPlayerMain implements Runnable {
 	private static final Logger s_logger = LoggerFactory.getLogger(DrICVideoPlayerMain.class);
+	private static final String ENV_VAR_HOME = "DRIC_CAMERA_HOME";
 	private static final String DEF_CONFIG_FILE = "camera_agent.yaml";
 	
 	@Spec private CommandSpec m_spec;
@@ -55,6 +56,9 @@ public class DrICVideoPlayerMain implements Runnable {
 	
 	@Option(names={"--fps"}, paramLabel="fps", description={"frames per second"})
 	private float m_fps = 0f;
+	
+	@Option(names={"-l", "-loop"}, description={"loop"})
+	private boolean m_loop = false;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	private boolean m_verbose = false;
@@ -107,7 +111,9 @@ public class DrICVideoPlayerMain implements Runnable {
 	    		}
 	    	});
 			DrICVideoPlayer agent = new DrICVideoPlayer(m_cameraId, m_videoFile, m_fps, topic);
-			agent.run();
+			do {
+				agent.run();
+			} while ( m_loop );
 		}
 		catch ( Throwable e ) {
 			System.err.printf("failed: %s%n%n", e);
@@ -118,28 +124,26 @@ public class DrICVideoPlayerMain implements Runnable {
 		}
 	}
 	
-	private File getHomeDir() {
-		if ( m_homeDir == null ) {
-			return Utilities.getCurrentWorkingDir();
+	public File getHomeDir() {
+		File homeDir = m_homeDir;
+		if ( homeDir == null ) {
+			String homeDirPath = System.getenv(ENV_VAR_HOME);
+			if ( homeDirPath == null ) {
+				return Utilities.getCurrentWorkingDir();
+			}
+			else {
+				return new File(homeDirPath);
+			}
 		}
 		else {
 			return m_homeDir;
 		}
 	}
-	
-	private File getConfigFile() {
-		if ( m_configFile == null ) {
-			return new File(getHomeDir(), DEF_CONFIG_FILE);
-		}
-		else {
-			return m_configFile;
-		}
-	}
-	
-	private File configureLog4j() throws IOException {
+
+	public void configureLog4j() throws IOException {
 		File propsFile = new File(getHomeDir(), "log4j.properties");
 		if ( m_verbose ) {
-			System.out.println("use log4.properties=" + propsFile);
+			System.out.printf("use log4j.properties: file=%s%n", propsFile);
 		}
 		
 		Properties props = new Properties();
@@ -150,7 +154,14 @@ public class DrICVideoPlayerMain implements Runnable {
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("use log4j.properties from {}", propsFile);
 		}
-		
-		return propsFile;
+	}
+	
+	private File getConfigFile() {
+		if ( m_configFile == null ) {
+			return new File(getHomeDir(), DEF_CONFIG_FILE);
+		}
+		else {
+			return m_configFile;
+		}
 	}
 }

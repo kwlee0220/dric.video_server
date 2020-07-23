@@ -34,6 +34,7 @@ import utils.Utilities;
  */
 public class DrICCameraAgentMain implements Runnable {
 	private static final Logger s_logger = LoggerFactory.getLogger(DrICCameraAgentMain.class);
+	private static final String ENV_VAR_HOME = "DRIC_CAMERA_HOME";
 	private static final String DEF_CONFIG_FILE = "camera_agent.yaml";
 	
 	@Spec private CommandSpec m_spec;
@@ -84,12 +85,8 @@ public class DrICCameraAgentMain implements Runnable {
 			DrICClient client = DrICClient.connect(config.getPlatformEndPoint());
 	    	
 	    	CameraInfo camInfo = null;
-			PBDrICVideoServerProxy vserver = client.getVideoServer();
-			try {
+			try ( PBDrICVideoServerProxy vserver = client.getVideoServer() ) {
 				camInfo = vserver.getCamera(m_cameraId);
-			}
-			finally {
-				vserver.shutdown();
 			}
 			if ( m_verbose ) {
 				float fps = config.getVideoConfig().getFps();
@@ -136,8 +133,15 @@ public class DrICCameraAgentMain implements Runnable {
 	}
 	
 	private File getHomeDir() {
-		if ( m_homeDir == null ) {
-			return Utilities.getCurrentWorkingDir();
+		File homeDir = m_homeDir;
+		if ( homeDir == null ) {
+			String homeDirPath = System.getenv(ENV_VAR_HOME);
+			if ( homeDirPath == null ) {
+				return Utilities.getCurrentWorkingDir();
+			}
+			else {
+				return new File(homeDirPath);
+			}
 		}
 		else {
 			return m_homeDir;
@@ -152,11 +156,11 @@ public class DrICCameraAgentMain implements Runnable {
 			return m_configFile;
 		}
 	}
-	
-	private File configureLog4j() throws IOException {
+
+	private void configureLog4j() throws IOException {
 		File propsFile = new File(getHomeDir(), "log4j.properties");
 		if ( m_verbose ) {
-			System.out.println("use log4.properties=" + propsFile);
+			System.out.printf("use log4j.properties: file=%s%n", propsFile);
 		}
 		
 		Properties props = new Properties();
@@ -167,7 +171,5 @@ public class DrICCameraAgentMain implements Runnable {
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("use log4j.properties from {}", propsFile);
 		}
-		
-		return propsFile;
 	}
 }

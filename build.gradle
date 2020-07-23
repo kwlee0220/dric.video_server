@@ -42,10 +42,13 @@ repositories {
 	}
 }
 
-ext.opencv_version = '430'
-ext.grpc_version = '1.16.1'
-ext.protobuf_version = '3.5.1'
-ext.snakeyaml_version = '1.26'
+ext {
+	opencv_version = '430'
+	grpc_version = '1.16.1'
+	protobuf_version = '3.5.1'
+	snakeyaml_version = '1.26'
+	postgresql_version = '42.0.0'
+}
 
 dependencies {
 	compile project(":utils")
@@ -65,6 +68,8 @@ dependencies {
 	// yaml
 	implementation group: 'org.yaml', name: 'snakeyaml', version: "${snakeyaml_version}"
 	
+	// PostSQL
+	compile "org.postgresql:postgresql:${postgresql_version}"
 }
 
 task sourceJar(type: Jar) {
