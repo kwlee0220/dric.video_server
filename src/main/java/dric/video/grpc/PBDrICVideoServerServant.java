@@ -127,9 +127,10 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 	}
     
     private CameraFrameResponse toResponse(CameraFrame frame) {
-    	return CameraFrameResponse.newBuilder()
-								.setFrame(frame.toProto())
-								.build();
+    	return null;
+//    	return CameraFrameResponse.newBuilder()
+//								.setFrame(frame.toProto())
+//								.build();
     }
     
     private CameraFrameResponse toResponse(Exception e) {

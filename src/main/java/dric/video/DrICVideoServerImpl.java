@@ -127,7 +127,6 @@ public class DrICVideoServerImpl implements DrICVideoServer {
 		}
 	}
 	
-	@Override
 	public CameraFrame getCameraFrame(String cameraId, long ts)
 		throws FrameNotFoundException, DrICVideoException {
 		try {
@@ -144,7 +143,6 @@ public class DrICVideoServerImpl implements DrICVideoServer {
 		}
 	}
 
-	@Override
 	public FStream<CameraFrame> queryCameraFrames(String cameraId, long start, long stop)
 		throws DrICVideoException {
 		try {
