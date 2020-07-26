@@ -18,5 +18,5 @@ jdbc:
     password: urc2004
     
 opencv_dlls:
-    - C:/development/dric/dric.video/lib/opencv_java430.dll
-#    - C:/development/dric/dric.video/lib/opencv_videoio_ffmpeg430_64.dll
+    - ${dric.video.home}/lib/opencv_java430.dll
+#    - ${dric.video.home}/lib/opencv_videoio_ffmpeg430_64.dll

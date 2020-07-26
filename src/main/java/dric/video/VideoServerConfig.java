@@ -30,8 +30,9 @@ public class VideoServerConfig {
 		m_openCvDllList = openCvDllFiles;
 	}
 	
-	public static VideoServerConfig from(File configFile) throws FileNotFoundException, IOException {
-		return from(ConfigUtils.readYaml(configFile));
+	public static VideoServerConfig from(File configFile, Map<String,String> bindings)
+		throws FileNotFoundException, IOException {
+		return from(ConfigUtils.readYaml(configFile, bindings));
 	}
 	
 	public static VideoServerConfig from(Map<String,Object> props) {

@@ -52,7 +52,6 @@ ext {
 
 dependencies {
 	compile project(":utils")
-	compile project(":utils.grpc")
 	compile project(":dric.client")
 	
 	// OpenCV

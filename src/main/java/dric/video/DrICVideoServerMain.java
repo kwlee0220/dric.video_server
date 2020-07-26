@@ -5,11 +5,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
 
 import dric.ConfigUtils;
 import dric.proto.EndPoint;
@@ -44,12 +47,9 @@ public class DrICVideoServerMain implements Runnable {
 	
 	@Spec private CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
-	
-	private File m_homeDir;
+
 	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
-	public void setHome(String path) throws IOException {
-		m_homeDir = new File(path).getCanonicalFile();
-	}
+	private File m_homeDir;
 	
 	@Option(names={"--config"}, paramLabel="path", description={"VideoServer configration file"})
 	private File m_configFile;
@@ -74,7 +74,10 @@ public class DrICVideoServerMain implements Runnable {
 			if ( m_verbose ) {
 				System.out.println("use configuration file: " + configFile);
 			}
-			VideoServerConfig config = VideoServerConfig.from(configFile);
+			
+			Map<String,String> bindings = Maps.newHashMap();
+			bindings.put("dric.video.home", getHomeDir().getAbsolutePath());
+			VideoServerConfig config = VideoServerConfig.from(configFile, bindings);
 			DrICVideoServerImpl videoServer = new DrICVideoServerImpl(config);
 			
 			if ( m_format ) {

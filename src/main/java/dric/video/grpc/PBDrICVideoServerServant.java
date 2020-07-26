@@ -11,11 +11,11 @@ import dric.video.CameraNotFoundException;
 import dric.video.DrICVideoServerImpl;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import proto.ErrorProto;
-import proto.ErrorProto.Code;
-import proto.StringProto;
-import proto.VoidProto;
-import proto.VoidResponse;
+import marmot.proto.ErrorProto;
+import marmot.proto.ErrorProto.Code;
+import marmot.proto.StringProto;
+import marmot.proto.VoidProto;
+import marmot.proto.VoidResponse;
 import utils.grpc.PBUtils;
 
 /**
