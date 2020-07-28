@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.concurrent.CompletableFuture;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -12,8 +13,9 @@ import org.opencv.videoio.VideoWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dric.topic.Topic;
 import dric.type.CameraFrame;
+import marmot.dataset.DataSet;
+import marmot.stream.PipedRecordStream;
 import utils.func.CheckedConsumerX;
 import utils.func.Tuple;
 import utils.jdbc.JdbcProcessor;
@@ -28,13 +30,14 @@ class SampleFrameProcessor implements CheckedConsumerX<Tuple<Mat,Long>, SQLExcep
 	
 	private final DrICCameraAgent m_agent;
 	private final boolean m_noVideo;
-	private final Topic<CameraFrame> m_topic;
+	private final DataSet m_topic;
 	private final long m_videoInterval;
 	private long m_startTs = -1;
 	private long m_lastTs;
 	private final MatOfByte m_mob = new MatOfByte();
 //	private final FrameAppendSession m_appender;
 	
+	private PipedRecordStream m_pipe;
 	private File m_videoFile;
 	private VideoWriter m_writer;
 	private int m_appendCount = 0;
@@ -45,10 +48,14 @@ class SampleFrameProcessor implements CheckedConsumerX<Tuple<Mat,Long>, SQLExcep
 		m_topic = agent.getCameraFrameTopic();
 		m_videoInterval = agent.getVideoTailInterval();
 //		m_appender = new FrameAppendSession(m_agent.getJdbcProcessor());
+		
+		m_pipe = new PipedRecordStream(m_topic.getRecordSchema(), 16);
+		CompletableFuture.runAsync(() -> m_topic.write(m_pipe));
 	}
 
 	@Override
 	public void close() throws Exception {
+		m_pipe.endOfSupply();
 //		m_appender.close();
 		m_writer.release();
 	}
@@ -92,7 +99,7 @@ class SampleFrameProcessor implements CheckedConsumerX<Tuple<Mat,Long>, SQLExcep
 		byte[] jpegBytes = m_mob.toArray();
 		
 		CameraFrame frame = new CameraFrame(m_agent.getCameraId(), jpegBytes, ts);
-		m_topic.publish(frame);
+		m_pipe.supply(frame.toRecord());
 		
 //		m_appender.append(m_agent.getCameraId(), m_mob.toArray(), sample._2);
 		m_lastTs = ts;

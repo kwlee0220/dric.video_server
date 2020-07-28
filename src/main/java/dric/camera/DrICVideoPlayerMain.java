@@ -4,11 +4,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
 
 import dric.DrICClient;
 import dric.topic.Topic;
@@ -79,7 +82,10 @@ public class DrICVideoPlayerMain implements Runnable {
 			if ( m_verbose ) {
 				System.out.println("use configuration file: " + configFile);
 			}
-			CameraAgentConfig config = CameraAgentConfig.from(configFile);
+			
+			Map<String,String> bindings = Maps.newHashMap();
+			bindings.put("dric.camera.home", getHomeDir().getAbsolutePath());
+			CameraAgentConfig config = CameraAgentConfig.from(configFile, bindings);
 			if ( config.getOpenCvDllList().size() > 0 ) {
 				OpenCvInitializer.initialize(config.getOpenCvDllList());
 			}

@@ -15,6 +15,7 @@ import dric.ConfigUtils;
 import dric.proto.CameraInfo;
 import dric.topic.Topic;
 import dric.type.CameraFrame;
+import marmot.dataset.DataSet;
 import utils.LocalDateTimes;
 import utils.func.CheckedRunnable;
 import utils.func.Tuple;
@@ -29,7 +30,7 @@ public class DrICCameraAgent implements CheckedRunnable {
 	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
 	
 	private final CameraInfo m_info;
-	private final Topic<CameraFrame> m_topic;
+	private final DataSet m_topic;
 	private final CameraAgentConfig m_config;
 	private final boolean m_noVideo;
 	private final JdbcProcessor m_jdbc;
@@ -37,7 +38,7 @@ public class DrICCameraAgent implements CheckedRunnable {
 	private volatile Size m_resol;
 	private volatile VideoCapture m_camera;
 	
-	public DrICCameraAgent(CameraInfo info, Topic<CameraFrame> topic, boolean noVideo, CameraAgentConfig config) {
+	public DrICCameraAgent(CameraInfo info, DataSet topic, boolean noVideo, CameraAgentConfig config) {
 		m_info = info;
 		m_topic = topic;
 		m_noVideo = noVideo;
@@ -65,7 +66,7 @@ public class DrICCameraAgent implements CheckedRunnable {
 		return m_config.getVideoConfig().getTailInterval();
 	}
 	
-	Topic<CameraFrame> getCameraFrameTopic() {
+	DataSet getCameraFrameTopic() {
 		return m_topic;
 	}
 	

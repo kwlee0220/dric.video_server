@@ -4,7 +4,8 @@ dric_platform:
     
 video_store:
     folder: C:/Temp/videos
-    fps: 10.0
+    fps: 0.5
+#    fps: 10.0
 #    fourcc: XVID
     fourcc: DIVX
     tail_interval: 30s

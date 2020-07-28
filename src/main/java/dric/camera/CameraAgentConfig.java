@@ -9,7 +9,6 @@ import java.util.Map;
 import dric.ConfigUtils;
 import dric.proto.EndPoint;
 import dric.proto.JdbcEndPoint;
-import utils.jdbc.JdbcProcessor;
 
 /**
  * 
@@ -29,8 +28,9 @@ public class CameraAgentConfig {
 		m_openCvDllList = openCvDllFiles;
 	}
 	
-	public static CameraAgentConfig from(File configFile) throws FileNotFoundException, IOException {
-		return from(ConfigUtils.readYaml(configFile));
+	public static CameraAgentConfig from(File configFile, Map<String,String> bindings)
+		throws FileNotFoundException, IOException {
+		return from(ConfigUtils.readYaml(configFile, bindings));
 	}
 	
 	@SuppressWarnings("unchecked")

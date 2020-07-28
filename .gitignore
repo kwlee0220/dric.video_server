@@ -28,7 +28,6 @@ hs_err_pid*
 .lck
 /.settings/
 /build/
-/cam_*/
 /bin/cam_*
 /bin/*.yaml
 /bin/*.jar

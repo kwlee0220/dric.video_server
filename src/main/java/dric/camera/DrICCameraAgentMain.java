@@ -4,18 +4,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Maps;
+
 import dric.DrICClient;
 import dric.proto.CameraInfo;
-import dric.topic.Topic;
 import dric.topic.TopicClient;
 import dric.type.CameraFrame;
 import dric.video.PBDrICVideoServerProxy;
+import marmot.dataset.DataSet;
 import opencvj.OpenCvInitializer;
 import picocli.CommandLine;
 import picocli.CommandLine.Help;
@@ -74,7 +77,10 @@ public class DrICCameraAgentMain implements Runnable {
 			if ( m_verbose ) {
 				System.out.println("use configuration file: " + configFile);
 			}
-			CameraAgentConfig config = CameraAgentConfig.from(configFile);
+			
+			Map<String,String> bindings = Maps.newHashMap();
+			bindings.put("dric.camera.home", getHomeDir().getAbsolutePath());
+			CameraAgentConfig config = CameraAgentConfig.from(configFile, bindings);
 			if ( config.getOpenCvDllList().size() > 0 ) {
 				OpenCvInitializer.initialize(config.getOpenCvDllList());
 			}
@@ -94,22 +100,23 @@ public class DrICCameraAgentMain implements Runnable {
 									fps, config.getVideoConfig().getFourccString(), config.getVideoConfig().getVideoDir());
 			}
 			
-			m_client = client.getTopicClient(camInfo.getId());
-			Topic<CameraFrame> topic = m_client.getCameraFrameTopic();
-	    	Runtime.getRuntime().addShutdownHook(new Thread() {
-	    		public void run() {
-	    			if ( m_client != null ) {
-	    				if ( s_logger.isInfoEnabled() ) {
-	    					s_logger.info("disconnect from MQTT-Server");
-	    				}
-	    				
-	    				if ( m_client != null ) {
-	    					m_client.disconnect();
-		    				m_client = null;
-	    				}
-	    			}
-	    		}
-	    	});
+			DataSet topic = client.getDataSet(CameraFrame.DATASET_ID);
+			
+//			m_client = client.getTopicClient(camInfo.getId());
+//	    	Runtime.getRuntime().addShutdownHook(new Thread() {
+//	    		public void run() {
+//	    			if ( m_client != null ) {
+//	    				if ( s_logger.isInfoEnabled() ) {
+//	    					s_logger.info("disconnect from MQTT-Server");
+//	    				}
+//	    				
+//	    				if ( m_client != null ) {
+//	    					m_client.disconnect();
+//		    				m_client = null;
+//	    				}
+//	    			}
+//	    		}
+//	    	});
 	    	
 			DrICCameraAgent agent = new DrICCameraAgent(camInfo, topic, m_noVideo, config);
 			agent.run();

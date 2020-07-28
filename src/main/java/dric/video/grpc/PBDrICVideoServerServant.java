@@ -98,7 +98,7 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 		}
 	}
 	
-	@Override
+//	@Override
     public void getCameraFrame(CameraFrameRequest req, StreamObserver<CameraFrameResponse> out) {
 		try {
 			CameraFrame frame = m_server.getCameraFrame(req.getCameraId(), req.getTs());
@@ -112,6 +112,7 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 		}
 	}
 
+//	@Override
     public void queryCameraFrames(CameraFrameRangeRequest req, StreamObserver<CameraFrameResponse> out) {
 		try {
 			m_server.queryCameraFrames(req.getCameraId(), req.getStartTs(), req.getStopTs())
