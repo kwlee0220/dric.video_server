@@ -9,8 +9,9 @@ import org.opencv.videoio.Videoio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dric.topic.Topic;
 import dric.type.CameraFrame;
+import marmot.RecordWriteSession;
+import marmot.dataset.DataSet;
 import utils.StopWatch;
 import utils.func.CheckedRunnable;
 
@@ -23,13 +24,13 @@ public class DrICVideoPlayer implements CheckedRunnable {
 	
 	private final String m_cameraId;
 	private final String m_videoFile;
-	private final Topic<CameraFrame> m_topic;
+	private final DataSet m_topic;
 	
 	private volatile VideoCapture m_camera;
 	private volatile Size m_resol;
 	private volatile float m_fps;
 	
-	public DrICVideoPlayer(String cameraId, String videoFile, float fps, Topic<CameraFrame> topic) {
+	public DrICVideoPlayer(String cameraId, String videoFile, float fps, DataSet topic) {
 		m_cameraId = cameraId;
 		m_videoFile = videoFile;
 		m_fps = fps;
@@ -46,10 +47,6 @@ public class DrICVideoPlayer implements CheckedRunnable {
 	
 	float getFps() {
 		return m_fps;
-	}
-	
-	Topic<CameraFrame> getCameraFrameTopic() {
-		return m_topic;
 	}
 	
 	@Override
@@ -78,10 +75,9 @@ public class DrICVideoPlayer implements CheckedRunnable {
 		long captureInterval = Math.round(1000 / m_fps);
 		
 		long elapsed = 0;
-		try {
+		try ( RecordWriteSession session = m_topic.openWriteSession() ) {
 			while ( m_camera.isOpened() ) {
 				long sleepMillis = Math.max(0, (captureInterval - elapsed));
-//				System.out.println("sleep millis: " + sleepMillis);
 				Thread.sleep(sleepMillis);
 				
 				StopWatch watch = StopWatch.start();
@@ -93,7 +89,7 @@ public class DrICVideoPlayer implements CheckedRunnable {
 				byte[] jpegBytes = bmat.toArray();
 				
 				CameraFrame frame = new CameraFrame(m_cameraId, jpegBytes, System.currentTimeMillis());
-				m_topic.publish(frame);
+				session.write(frame.toRecord());
 				elapsed = watch.stopInMillis();
 			}
 		}

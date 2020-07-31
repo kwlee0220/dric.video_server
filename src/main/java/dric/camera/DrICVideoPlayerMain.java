@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import dric.DrICClient;
-import dric.topic.Topic;
 import dric.topic.TopicClient;
 import dric.type.CameraFrame;
+import marmot.dataset.DataSet;
 import opencvj.OpenCvInitializer;
 import picocli.CommandLine;
 import picocli.CommandLine.Help;
@@ -60,7 +60,7 @@ public class DrICVideoPlayerMain implements Runnable {
 	@Option(names={"--fps"}, paramLabel="fps", description={"frames per second"})
 	private float m_fps = 0f;
 	
-	@Option(names={"-l", "-loop"}, description={"loop"})
+	@Option(names={"-l", "--loop"}, description={"loop"})
 	private boolean m_loop = false;
 	
 	@Option(names={"-v"}, description={"verbose"})
@@ -93,29 +93,8 @@ public class DrICVideoPlayerMain implements Runnable {
 				OpenCvInitializer.initialize();
 			}
 			
-			DrICClient client = DrICClient.connect(config.getPlatformEndPoint());
-	    	Runtime.getRuntime().addShutdownHook(new Thread() {
-	    		public void run() {
-	    			IOUtils.closeQuietly(client);
-	    		}
-	    	});
-			
-			m_client = client.getTopicClient(m_cameraId);
-			Topic<CameraFrame> topic = m_client.getCameraFrameTopic();
-	    	Runtime.getRuntime().addShutdownHook(new Thread() {
-	    		public void run() {
-	    			if ( m_client != null ) {
-	    				if ( s_logger.isInfoEnabled() ) {
-	    					s_logger.info("disconnect from MQTT-Server");
-	    				}
-	    				
-	    				if ( m_client != null ) {
-	    					m_client.disconnect();
-		    				m_client = null;
-	    				}
-	    			}
-	    		}
-	    	});
+			DrICClient client = DrICClient.connect(config.getPlatformEndPoint(), m_cameraId);
+			DataSet topic = client.getDataSet(CameraFrame.DATASET_ID);
 			DrICVideoPlayer agent = new DrICVideoPlayer(m_cameraId, m_videoFile, m_fps, topic);
 			do {
 				agent.run();

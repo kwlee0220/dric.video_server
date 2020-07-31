@@ -103,7 +103,7 @@ publishing {
 	}
 }
 
-ext.distDir = "${System.properties['user.home']}/Temp/dric/${archivesBaseName}.dist"
+ext.distDir = "${archivesBaseName}.dist"
 task distributeOpenCvDLL(type:Copy) {
 	dependsOn assemble
 	into "${distDir}"
@@ -112,9 +112,13 @@ task distributeOpenCvDLL(type:Copy) {
 	}
 }
 task distributeBinary(type:Copy) {
-	dependsOn distributeOpenCvDLL
-	into "${distDir}"
-	from "${projectDir}/bin"
+	dependsOn assemble
+	into "${archivesBaseName}.dist"
+	from ("${projectDir}") {
+		include 'bin/**'
+		include 'lib/**'
+		include 'log4j.properties'
+	}
 }
 
 apply plugin: 'eclipse'

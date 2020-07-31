@@ -14,10 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import dric.DrICClient;
-import dric.proto.CameraInfo;
-import dric.topic.TopicClient;
 import dric.type.CameraFrame;
-import dric.video.PBDrICVideoServerProxy;
 import marmot.dataset.DataSet;
 import opencvj.OpenCvInitializer;
 import picocli.CommandLine;
@@ -35,8 +32,8 @@ import utils.Utilities;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class DrICCameraAgentMain implements Runnable {
-	private static final Logger s_logger = LoggerFactory.getLogger(DrICCameraAgentMain.class);
+public class DrICImagePlayerMain implements Runnable {
+	private static final Logger s_logger = LoggerFactory.getLogger(DrICImagePlayerMain.class);
 	private static final String ENV_VAR_HOME = "DRIC_CAMERA_HOME";
 	private static final String DEF_CONFIG_FILE = "camera_agent.yaml";
 	
@@ -45,6 +42,9 @@ public class DrICCameraAgentMain implements Runnable {
 	
 	@Parameters(paramLabel="camera-id", index="0", description={"camera id"})
 	private String m_cameraId;
+	
+	@Parameters(paramLabel="image-dir", index="1", description={"image directory path"})
+	private File m_imageDir;
 	
 	private File m_homeDir;
 	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
@@ -55,16 +55,17 @@ public class DrICCameraAgentMain implements Runnable {
 	@Option(names={"--config"}, paramLabel="path", description={"CameraAgent configuration file"})
 	private File m_configFile;
 	
-	@Option(names={"-n", "--no-video"}, description={"do not create video files"})
-	private boolean m_noVideo = false;
+	@Option(names={"--fps"}, paramLabel="fps", description={"frames per second"})
+	private float m_fps = 0f;
+	
+	@Option(names={"-l", "--loop"}, description={"loop"})
+	private boolean m_loop = false;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	private boolean m_verbose = false;
 	
-	private TopicClient m_client = null;
-	
 	public static final void main(String... args) throws Exception {
-		DrICCameraAgentMain cmd = new DrICCameraAgentMain();
+		DrICImagePlayerMain cmd = new DrICImagePlayerMain();
 		CommandLine.run(cmd, System.out, System.err, Help.Ansi.OFF, args);
 	}
 	
@@ -89,40 +90,19 @@ public class DrICCameraAgentMain implements Runnable {
 			}
 			
 			DrICClient client = DrICClient.connect(config.getPlatformEndPoint(), m_cameraId);
-	    	
-	    	CameraInfo camInfo = null;
-			try ( PBDrICVideoServerProxy vserver = client.getVideoServer() ) {
-				camInfo = vserver.getCamera(m_cameraId);
-			}
-			if ( m_verbose ) {
-				float fps = config.getVideoConfig().getFps();
-				System.out.printf("camera=%s, url=%s, fps=%.1f, fourcc=%s, dir=%s%n", camInfo.getId(), camInfo.getRtspUrl(),
-									fps, config.getVideoConfig().getFourccString(), config.getVideoConfig().getVideoDir());
-			}
-			
 			DataSet topic = client.getDataSet(CameraFrame.DATASET_ID);
-			DrICCameraAgent agent = new DrICCameraAgent(camInfo, topic, m_noVideo, config);
-			agent.run();
+	    	DrICImagePlayer agent = new DrICImagePlayer(m_cameraId, m_imageDir, m_fps, topic);
+			do {
+				agent.run();
+			} while ( m_loop );
 		}
 		catch ( Throwable e ) {
 			System.err.printf("failed: %s%n%n", e);
 			m_spec.commandLine().usage(System.out, Ansi.OFF);
 		}
-		finally {
-			if ( m_client != null ) {
-				if ( s_logger.isInfoEnabled() ) {
-					s_logger.info("disconnect from MQTT-Server");
-				}
-				
-				if ( m_client != null ) {
-					m_client.disconnect();
-    				m_client = null;
-				}
-			}
-		}
 	}
 	
-	private File getHomeDir() {
+	public File getHomeDir() {
 		File homeDir = m_homeDir;
 		if ( homeDir == null ) {
 			String homeDirPath = System.getenv(ENV_VAR_HOME);
@@ -137,17 +117,8 @@ public class DrICCameraAgentMain implements Runnable {
 			return m_homeDir;
 		}
 	}
-	
-	private File getConfigFile() {
-		if ( m_configFile == null ) {
-			return new File(getHomeDir(), DEF_CONFIG_FILE);
-		}
-		else {
-			return m_configFile;
-		}
-	}
 
-	private void configureLog4j() throws IOException {
+	public void configureLog4j() throws IOException {
 		File propsFile = new File(getHomeDir(), "log4j.properties");
 		if ( m_verbose ) {
 			System.out.printf("use log4j.properties: file=%s%n", propsFile);
@@ -160,6 +131,15 @@ public class DrICCameraAgentMain implements Runnable {
 		PropertyConfigurator.configure(props);
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("use log4j.properties from {}", propsFile);
+		}
+	}
+	
+	private File getConfigFile() {
+		if ( m_configFile == null ) {
+			return new File(getHomeDir(), DEF_CONFIG_FILE);
+		}
+		else {
+			return m_configFile;
 		}
 	}
 }

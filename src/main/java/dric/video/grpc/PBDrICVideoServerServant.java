@@ -4,6 +4,7 @@ import dric.proto.CameraFrameRangeRequest;
 import dric.proto.CameraFrameRequest;
 import dric.proto.CameraFrameResponse;
 import dric.proto.CameraInfo;
+import dric.proto.CameraInfoResponse;
 import dric.proto.DrICVideoServerGrpc.DrICVideoServerImplBase;
 import dric.type.CameraFrame;
 import dric.video.CameraExistsException;
@@ -30,10 +31,10 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 	}
 	
 	@Override
-    public void getCamera(StringProto id, StreamObserver<CameraInfo> out) {
+    public void getCamera(StringProto id, StreamObserver<CameraInfoResponse> out) {
 		try {
 			CameraInfo camera = m_server.getCamera(id.getValue());
-			out.onNext(camera);
+			out.onNext(toCameraInfoResponse(camera));
 		}
 		catch ( CameraNotFoundException e ) {
 			out.onError(Status.NOT_FOUND
@@ -51,9 +52,10 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 	}
 	
 	@Override
-    public void getCameraAll(VoidProto req, StreamObserver<CameraInfo> out) {
+    public void getCameraAll(VoidProto req, StreamObserver<CameraInfoResponse> out) {
 		try {
 			m_server.getCameraAll()
+					.map(this::toCameraInfoResponse)
 					.forEach(out::onNext);
 		}
 		catch ( Exception e ) {
@@ -126,6 +128,18 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 			out.onCompleted();
 		}
 	}
+    
+    private CameraInfoResponse toCameraInfoResponse(CameraInfo camera) {
+    	return CameraInfoResponse.newBuilder()
+    							.setCameraInfo(camera)
+    							.build();
+    }
+    
+    private CameraInfoResponse toCameraInfoResponse(Exception e) {
+    	return CameraInfoResponse.newBuilder()
+								.setError(PBUtils.ERROR(e))
+								.build();
+    }
     
     private CameraFrameResponse toResponse(CameraFrame frame) {
     	return null;
