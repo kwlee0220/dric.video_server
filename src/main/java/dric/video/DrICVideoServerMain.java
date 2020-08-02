@@ -103,7 +103,9 @@ public class DrICVideoServerMain implements Runnable {
 			server.start();
 
 			String host = NetUtils.getLocalHostAddress();
-			System.out.printf("started: DrICVideoServer[host=%s, port=%d]%n", host, ep.getPort());
+			if ( m_verbose ) {
+				System.out.printf("started: DrICVideoServer[host=%s, port=%d]%n", host, ep.getPort());
+			}
 			server.awaitTermination();
 		}
 		catch ( Exception e ) {

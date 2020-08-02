@@ -47,14 +47,10 @@ public class DrICVideoPlayerMain implements Runnable {
 	
 	@Parameters(paramLabel="video-file", index="1", description={"video file path"})
 	private String m_videoFile;
-	
+
 	private File m_homeDir;
-	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
-	public void setHome(String path) throws IOException {
-		m_homeDir = new File(path).getCanonicalFile();
-	}
 	
-	@Option(names={"--config"}, paramLabel="path", description={"CameraAgent configuration file"})
+	@Option(names={"--config"}, paramLabel="path", description={"DrICVideoPlayer configuration file"})
 	private File m_configFile;
 	
 	@Option(names={"--fps"}, paramLabel="fps", description={"frames per second"})
@@ -72,10 +68,23 @@ public class DrICVideoPlayerMain implements Runnable {
 		DrICVideoPlayerMain cmd = new DrICVideoPlayerMain();
 		CommandLine.run(cmd, System.out, System.err, Help.Ansi.OFF, args);
 	}
+
+	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoPlayer Home Directory"})
+	public void setHomeDir(File file) {
+		try {
+			m_homeDir = file.getCanonicalFile();
+		}
+		catch ( IOException e ) {
+			throw new IllegalArgumentException("invalid home.dir=" + file);
+		}
+	}
 	
 	@Override
 	public void run() {
 		try  {
+			if ( m_verbose ) {
+				System.out.println("use home.dir: " + getHomeDir());
+			}
 			configureLog4j();
 
 			File configFile = getConfigFile();
