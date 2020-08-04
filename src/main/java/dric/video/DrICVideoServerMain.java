@@ -48,7 +48,6 @@ public class DrICVideoServerMain implements Runnable {
 	@Spec private CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 
-	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
 	private File m_homeDir;
 	
 	@Option(names={"--config"}, paramLabel="path", description={"VideoServer configration file"})
@@ -65,9 +64,22 @@ public class DrICVideoServerMain implements Runnable {
 		CommandLine.run(cmd, System.out, System.err, Help.Ansi.OFF, args);
 	}
 	
+	@Option(names={"--home"}, paramLabel="path", description={"DrICVideoServer Home Directory"})
+	void setHomeDir(File dir) {
+		try {
+			m_homeDir = dir.getCanonicalFile();
+		}
+		catch ( IOException e ) {
+			throw new IllegalArgumentException("invalid home.dir=" + dir, e);
+		}
+	}
+	
 	@Override
 	public void run() {
 		try {
+			if ( m_verbose ) {
+				System.out.println("use home.dir: " + getHomeDir());
+			}
 			configureLog4j();
 
 			File configFile = getConfigFile();
