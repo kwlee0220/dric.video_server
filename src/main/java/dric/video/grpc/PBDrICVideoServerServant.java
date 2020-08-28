@@ -9,7 +9,7 @@ import dric.proto.DrICVideoServerGrpc.DrICVideoServerImplBase;
 import dric.type.CameraFrame;
 import dric.video.CameraExistsException;
 import dric.video.CameraNotFoundException;
-import dric.video.DrICVideoServerImpl;
+import dric.video.DrICVideoServer;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import marmot.proto.ErrorProto;
@@ -24,9 +24,9 @@ import utils.grpc.PBUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
-	private final DrICVideoServerImpl m_server;
+	private final DrICVideoServer m_server;
 	
-	public PBDrICVideoServerServant(DrICVideoServerImpl server) {
+	public PBDrICVideoServerServant(DrICVideoServer server) {
 		m_server = server;
 	}
 	
@@ -102,31 +102,31 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 	
 //	@Override
     public void getCameraFrame(CameraFrameRequest req, StreamObserver<CameraFrameResponse> out) {
-		try {
-			CameraFrame frame = m_server.getCameraFrame(req.getCameraId(), req.getTs());
-			out.onNext(toResponse(frame));
-		}
-		catch ( Exception e ) {
-			out.onNext(toResponse(e));
-		}
-		finally {
-			out.onCompleted();
-		}
+//		try {
+//			CameraFrame frame = m_server.getCameraFrame(req.getCameraId(), req.getTs());
+//			out.onNext(toResponse(frame));
+//		}
+//		catch ( Exception e ) {
+//			out.onNext(toResponse(e));
+//		}
+//		finally {
+//			out.onCompleted();
+//		}
 	}
 
 //	@Override
     public void queryCameraFrames(CameraFrameRangeRequest req, StreamObserver<CameraFrameResponse> out) {
-		try {
-			m_server.queryCameraFrames(req.getCameraId(), req.getStartTs(), req.getStopTs())
-					.map(this::toResponse)
-					.forEach(out::onNext);
-		}
-		catch ( Exception e ) {
-			out.onNext(toResponse(e));
-		}
-		finally {
-			out.onCompleted();
-		}
+//		try {
+//			m_server.queryCameraFrames(req.getCameraId(), req.getStartTs(), req.getStopTs())
+//					.map(this::toResponse)
+//					.forEach(out::onNext);
+//		}
+//		catch ( Exception e ) {
+//			out.onNext(toResponse(e));
+//		}
+//		finally {
+//			out.onCompleted();
+//		}
 	}
     
     private CameraInfoResponse toCameraInfoResponse(CameraInfo camera) {

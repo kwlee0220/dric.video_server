@@ -42,6 +42,7 @@ ext {
 	protobuf_version = '3.5.1'
 	snakeyaml_version = '1.26'
 	postgresql_version = '42.0.0'
+	httpclient_version = '4.5.6'
 }
 
 dependencies {
@@ -57,6 +58,9 @@ dependencies {
 	api "io.grpc:grpc-stub:${grpc_version}"
 	api "io.grpc:grpc-netty-shaded:${grpc_version}"
 	implementation "io.grpc:grpc-protobuf:${grpc_version}"
+	
+	// HttpClient
+	api "org.apache.httpcomponents:httpclient:${httpclient_version}"
 	
 	// yaml
 	implementation group: 'org.yaml', name: 'snakeyaml', version: "${snakeyaml_version}"

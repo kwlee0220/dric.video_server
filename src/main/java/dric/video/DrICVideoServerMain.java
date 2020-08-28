@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.util.Map;
 import java.util.Properties;
 
@@ -14,9 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import dric.ConfigUtils;
 import dric.proto.EndPoint;
 import dric.video.grpc.PBDrICVideoServerServant;
+import dric.video.sunapi.SunApiVideoServerImpl;
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import opencvj.OpenCvInitializer;
@@ -30,7 +29,6 @@ import picocli.CommandLine.Spec;
 import utils.NetUtils;
 import utils.UsageHelp;
 import utils.Utilities;
-import utils.jdbc.JdbcProcessor;
 
 /**
  * 
@@ -90,17 +88,18 @@ public class DrICVideoServerMain implements Runnable {
 			Map<String,String> bindings = Maps.newHashMap();
 			bindings.put("dric.video.home", getHomeDir().getAbsolutePath());
 			VideoServerConfig config = VideoServerConfig.from(configFile, bindings);
-			DrICVideoServerImpl videoServer = new DrICVideoServerImpl(config);
+//			DrICVideoServerImpl videoServer = new DrICVideoServerImpl(config);
+			SunApiVideoServerImpl videoServer = new SunApiVideoServerImpl("129.254.82.33", 80, "admin", "dr.icTop!!");
 			
 			if ( m_format ) {
-				JdbcProcessor jdbc = ConfigUtils.getJdbcProcessor(config.getJdbcEndPoint());
-				try ( Connection conn = jdbc.connect() ) {
-					if ( m_verbose ) {
-						System.out.println("format database");
-					}
-					
-					DrICVideoServerImpl.format(conn);
-				}
+//				JdbcProcessor jdbc = ConfigUtils.getJdbcProcessor(config.getJdbcEndPoint());
+//				try ( Connection conn = jdbc.connect() ) {
+//					if ( m_verbose ) {
+//						System.out.println("format database");
+//					}
+//					
+//					DrICVideoServerImpl.format(conn);
+//				}
 			}
 			
 			loadOpenCv(config);
@@ -135,7 +134,7 @@ public class DrICVideoServerMain implements Runnable {
 		}
 	}
 	
-	private Server createServer(DrICVideoServerImpl server, int port) {
+	private Server createServer(DrICVideoServer server, int port) {
 		PBDrICVideoServerServant servant = new PBDrICVideoServerServant(server);
 		Server nettyServer = NettyServerBuilder.forPort(port)
 												.addService(servant)
