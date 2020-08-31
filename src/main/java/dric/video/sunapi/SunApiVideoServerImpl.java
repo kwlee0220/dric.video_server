@@ -26,6 +26,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import dric.proto.CameraInfo;
+import dric.proto.PlaybackStreamRequest;
+import dric.proto.VideoStream;
 import dric.type.CameraFrame;
 import dric.video.CameraExistsException;
 import dric.video.CameraNotFoundException;
@@ -116,6 +118,9 @@ public class SunApiVideoServerImpl implements DrICVideoServer {
 							.setRtspUrl(rtspUrl)
 							.build();
 		}
+		catch ( CameraNotFoundException e ) {
+			throw e;
+		}
 		catch ( Exception e ) {
 			throw new DrICVideoException(e);
 		}
@@ -124,6 +129,36 @@ public class SunApiVideoServerImpl implements DrICVideoServer {
 	@Override
 	public FStream<CameraInfo> getCameraAll() throws DrICVideoException {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public VideoStream getPlaybackStream(PlaybackStreamRequest req) throws DrICVideoException {
+		try {
+			Map<String,SunApiCameraInfo> infos = loadCameraInfos();
+			SunApiCameraInfo info = infos.get(req.getCameraId());
+			if ( info == null ) {
+				throw new CameraNotFoundException("camera.id=" + req.getCameraId());
+			}
+			
+			String urlTmpt = "http://%s:%d/stw-cgi/media.cgi?msubmenu=streamuri&action=view&Channel=%d"
+						+ "&Profile=%d&MediaType=Search&Mode=Full&ClientType=PC&StreamType=RTPUnicast"
+						+ "&TransportProtocol=TCP&RTSPOverHTTP=False";
+			String url = String.format(urlTmpt, m_host, m_port, info.m_channel, info.m_profile);
+			Tuple3<Integer,String,JsonObject> ret = callGetMethod(url);
+			String streamUri = ret._3.get("URI").getAsString();
+			String rtspUrl = attachAuth(streamUri);
+			
+			return VideoStream.newBuilder()
+							.setCameraId(req.getCameraId())
+							.setRtspUrl(rtspUrl)
+							.build();
+		}
+		catch ( CameraNotFoundException e ) {
+			throw e;
+		}
+		catch ( Exception e ) {
+			throw new DrICVideoException(e);
+		}
 	}
 	
 	public List<Video> queryVideos(String camId, long start, long stop) throws DrICVideoException {
@@ -217,5 +252,9 @@ public class SunApiVideoServerImpl implements DrICVideoServer {
 		    	return Tuple.of(code, details, (JsonObject)null);
 		    }
 		}
+	}
+	
+	private String attachAuth(String rtspUrl) {
+		return String.format("%s%s:%s@%s", rtspUrl.substring(0, 7), m_userId, m_passwd, rtspUrl.substring(7));
 	}
 }

@@ -13,6 +13,8 @@ import com.google.common.collect.Iterables;
 
 import dric.ConfigUtils;
 import dric.proto.CameraInfo;
+import dric.proto.PlaybackStreamRequest;
+import dric.proto.VideoStream;
 import dric.type.CameraFrame;
 import utils.func.FOption;
 import utils.func.Funcs;
@@ -105,6 +107,11 @@ public class DrICVideoServerImpl implements DrICVideoServer {
 		catch ( SQLException e ) {
 			throw new DrICVideoException("" + e);
 		}
+	}
+
+	@Override
+	public VideoStream getPlaybackStream(PlaybackStreamRequest req) throws DrICVideoException {
+		return null;
 	}
 	
 	public List<Video> queryVideos(String camId, long start, long stop) throws DrICVideoException {
