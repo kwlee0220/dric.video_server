@@ -93,6 +93,11 @@ public class SunApiVideoServerImpl implements DrICVideoServer {
 			m_channel = channel;
 			m_profile = profile;
 		}
+		
+		@Override
+		public String toString() {
+			return String.format("SunAPI_Camera[id=%s, channel=%d, profile=%d]", m_cameraId, m_channel, m_profile);
+		}
 	}
 
 	@Override
@@ -146,7 +151,7 @@ public class SunApiVideoServerImpl implements DrICVideoServer {
 			String url = String.format(urlTmpt, m_host, m_port, info.m_channel, info.m_profile);
 			Tuple3<Integer,String,JsonObject> ret = callGetMethod(url);
 			String streamUri = ret._3.get("URI").getAsString();
-			String rtspUrl = attachAuth(streamUri);
+			String rtspUrl = String.format("%s&start=%s&stop=%s",  attachAuth(streamUri), req.getStartTime(), req.getStopTime());
 			
 			return VideoStream.newBuilder()
 							.setCameraId(req.getCameraId())

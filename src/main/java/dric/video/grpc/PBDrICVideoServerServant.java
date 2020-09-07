@@ -6,6 +6,9 @@ import dric.proto.CameraFrameResponse;
 import dric.proto.CameraInfo;
 import dric.proto.CameraInfoResponse;
 import dric.proto.DrICVideoServerGrpc.DrICVideoServerImplBase;
+import dric.proto.PlaybackStreamRequest;
+import dric.proto.VideoStream;
+import dric.proto.VideoStreamResponse;
 import dric.type.CameraFrame;
 import dric.video.CameraExistsException;
 import dric.video.CameraNotFoundException;
@@ -57,6 +60,27 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 			m_server.getCameraAll()
 					.map(this::toCameraInfoResponse)
 					.forEach(out::onNext);
+		}
+		catch ( Exception e ) {
+			out.onError(Status.INTERNAL
+							.withDescription("cause=" + e)
+							.asException());
+		}
+		finally {
+			out.onCompleted();
+		}
+	}
+	
+	@Override
+    public void getPlaybackStream(PlaybackStreamRequest req, StreamObserver<VideoStreamResponse> out) {
+		try {
+			VideoStream videoStream = m_server.getPlaybackStream(req);
+			out.onNext(toVideoStreamResponse(videoStream));
+		}
+		catch ( CameraNotFoundException e ) {
+			out.onError(Status.NOT_FOUND
+							.withDescription("CameraInfo is not found: id=" + req.getCameraId())
+							.asException());
 		}
 		catch ( Exception e ) {
 			out.onError(Status.INTERNAL
@@ -128,6 +152,12 @@ public class PBDrICVideoServerServant extends DrICVideoServerImplBase {
 //			out.onCompleted();
 //		}
 	}
+    
+    private VideoStreamResponse toVideoStreamResponse(VideoStream stream) {
+    	return VideoStreamResponse.newBuilder()
+    							.setStreamInfo(stream)
+    							.build();
+    }
     
     private CameraInfoResponse toCameraInfoResponse(CameraInfo camera) {
     	return CameraInfoResponse.newBuilder()
